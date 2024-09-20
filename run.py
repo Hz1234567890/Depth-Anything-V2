@@ -14,9 +14,9 @@ if __name__ == '__main__':
     
     parser.add_argument('--img-path', type=str)
     parser.add_argument('--input-size', type=int, default=518)
-    parser.add_argument('--outdir', type=str, default='./vis_depth')
+    parser.add_argument('--outdir', type=str, default='./mine_depth')
     
-    parser.add_argument('--encoder', type=str, default='vitl', choices=['vits', 'vitb', 'vitl', 'vitg'])
+    parser.add_argument('--encoder', type=str, default='vits', choices=['vits', 'vitb', 'vitl', 'vitg'])
     
     parser.add_argument('--pred-only', dest='pred_only', action='store_true', help='only display the prediction')
     parser.add_argument('--grayscale', dest='grayscale', action='store_true', help='do not apply colorful palette')
@@ -36,38 +36,54 @@ if __name__ == '__main__':
     depth_anything.load_state_dict(torch.load(f'checkpoints/depth_anything_v2_{args.encoder}.pth', map_location='cpu'))
     depth_anything = depth_anything.to(DEVICE).eval()
     
-    if os.path.isfile(args.img_path):
-        if args.img_path.endswith('txt'):
-            with open(args.img_path, 'r') as f:
-                filenames = f.read().splitlines()
-        else:
-            filenames = [args.img_path]
-    else:
-        filenames = glob.glob(os.path.join(args.img_path, '**/*'), recursive=True)
-    
-    os.makedirs(args.outdir, exist_ok=True)
-    
     cmap = matplotlib.colormaps.get_cmap('Spectral_r')
+
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir, exist_ok=True)
+
+    for item in os.listdir(args.img_path):
+        item_path = os.path.join(args.img_path,item)
+        print("当前访问的item_path是:",item_path)
+        item_output_folder_path = os.path.join(args.outdir,item)
+        print("该item的输出路径为:",item_output_folder_path)
+
+        if not os.path.exists(item_output_folder_path):
+            os.makedirs(item_output_folder_path, exist_ok=True)
+
+        files = os.listdir(item_path)
+        filenames = [file for file in files if file.endswith('.jpg')]
+    # if os.path.isfile(args.img_path):
+    #     if args.img_path.endswith('txt'):
+    #         with open(args.img_path, 'r') as f:
+    #             filenames = f.read().splitlines()
+    #     else:
+    #         filenames = [args.img_path]
+    # else:
+    #     filenames = glob.glob(os.path.join(args.img_path, '**/*'), recursive=True)
     
-    for k, filename in enumerate(filenames):
-        print(f'Progress {k+1}/{len(filenames)}: {filename}')
-        
-        raw_image = cv2.imread(filename)
-        
-        depth = depth_anything.infer_image(raw_image, args.input_size)
-        
-        depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
-        depth = depth.astype(np.uint8)
-        
-        if args.grayscale:
-            depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
-        else:
-            depth = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(np.uint8)
-        
-        if args.pred_only:
-            cv2.imwrite(os.path.join(args.outdir, os.path.splitext(os.path.basename(filename))[0] + '.png'), depth)
-        else:
-            split_region = np.ones((raw_image.shape[0], 50, 3), dtype=np.uint8) * 255
-            combined_result = cv2.hconcat([raw_image, split_region, depth])
+    # os.makedirs(args.outdir, exist_ok=True)
+    # cmap = matplotlib.colormaps.get_cmap('Spectral_r')
+
+    
+        for k, filename in enumerate(filenames):
+            print(f'Progress {k+1}/{len(filenames)}: {filename}')
+            filename = os.path.join(item_path,filename)
+            raw_image = cv2.imread(filename)
             
-            cv2.imwrite(os.path.join(args.outdir, os.path.splitext(os.path.basename(filename))[0] + '.png'), combined_result)
+            depth = depth_anything.infer_image(raw_image, args.input_size)
+            
+            depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
+            depth = depth.astype(np.uint8)
+            
+            if args.grayscale:
+                depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
+            else:
+                depth = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(np.uint8)
+            
+            if args.pred_only:
+                cv2.imwrite(os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png'), depth)
+            else:
+                split_region = np.ones((raw_image.shape[0], 50, 3), dtype=np.uint8) * 255
+                combined_result = cv2.hconcat([raw_image, split_region, depth])
+                
+                cv2.imwrite(os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png'), combined_result)
