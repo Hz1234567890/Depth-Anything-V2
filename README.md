@@ -1,4 +1,8 @@
 # MINE
+  for test
+    
+    python run.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/UseGeo_2 --outdir /media/hz/新加卷/0mywork/mine/mine_depth_V2_test
+>
     python run.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/UseGeo_2 --outdir /media/hz/新加卷/0mywork/mine/mine_depth_V2
 
 <div align="center">

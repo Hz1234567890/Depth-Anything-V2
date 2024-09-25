@@ -4,6 +4,7 @@ import glob
 import matplotlib
 import numpy as np
 import os
+from MySobel import compute_normal_vectors,visualize_normals 
 import torch
 
 from depth_anything_v2.dpt import DepthAnythingV2
@@ -72,9 +73,24 @@ if __name__ == '__main__':
             
             depth = depth_anything.infer_image(raw_image, args.input_size)
             
-            depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
-            depth = depth.astype(np.uint8)
+            print("原始的深度矩阵",depth)
+
             
+
+            print("结束Sobel算子的计算")
+            
+            depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
+            # depth = depth.astype(np.uint8)
+            
+            print("归一化之后的深度矩阵",depth)
+
+            print("开始Sobel算子的计算")
+            
+            normals_filename = f"annotated_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+            normals_path = os.path.join(item_output_folder_path, normals_filename)
+            normal_x, normal_y, normal_z = compute_normal_vectors(depth)
+            visualize_normals(normal_x, normal_y, normal_z,normals_path)
+
             if args.grayscale:
                 depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
             else:
