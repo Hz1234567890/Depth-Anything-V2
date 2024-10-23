@@ -6,6 +6,7 @@ import numpy as np
 import os
 from MySobel import compute_normal_vectors,visualize_normals 
 import torch
+from test_picture import threeD_picture
 
 from depth_anything_v2.dpt import DepthAnythingV2
 
@@ -77,8 +78,10 @@ if __name__ == '__main__':
             
             depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
             # depth = depth.astype(np.uint8)
-            
-            print("归一化之后的深度矩阵",depth)
+            rows, columns = depth.shape
+            threeD_picture(rows, columns, depth)
+            input("按下任意键继续...")
+            # print("归一化之后的深度矩阵",depth)
 
             print("开始Sobel算子的计算")
             
@@ -91,6 +94,7 @@ if __name__ == '__main__':
             
             print("结束Sobel算子的计算")
             depth = depth.astype(np.uint8)
+
             if args.grayscale:
                 depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
             else:
