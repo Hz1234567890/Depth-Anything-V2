@@ -26,7 +26,7 @@ def compute_normal_vectors(depth_matrix):
     return normal_x, normal_y, normal_z
 
 # 可视化法向量场
-def visualize_normals(normal_x, normal_y, normal_z,filename):
+def visualize_normals(normal_x, normal_y, normal_z,filename,plane_filename):
     plt.figure(figsize=(10, 10))
     
     # 计算平面平整度（例如，可以通过法向量的变化率评估）
@@ -56,7 +56,8 @@ def visualize_normals(normal_x, normal_y, normal_z,filename):
     plt.figure(figsize=(8, 6))
     plt.imshow(plane_mask, cmap='gray')  # 使用灰度图显示平面区域
     plt.title('Detected Planes Based on Smoothness Difference')
-    plt.show()
+    plt.savefig(plane_filename)
+    # plt.show()
 """
 下面这部分代码，通过设定阈值的方式判定平面
 """

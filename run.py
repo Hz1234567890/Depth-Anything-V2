@@ -74,10 +74,6 @@ if __name__ == '__main__':
             depth = depth_anything.infer_image(raw_image, args.input_size)
             
             print("原始的深度矩阵",depth)
-
-            
-
-            print("结束Sobel算子的计算")
             
             depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
             # depth = depth.astype(np.uint8)
@@ -87,10 +83,14 @@ if __name__ == '__main__':
             print("开始Sobel算子的计算")
             
             normals_filename = f"annotated_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+            plane_filename = f"plane_{os.path.splitext(os.path.basename(filename))[0]}"
             normals_path = os.path.join(item_output_folder_path, normals_filename)
+            plane_path = os.path.join(item_output_folder_path, plane_filename)
             normal_x, normal_y, normal_z = compute_normal_vectors(depth)
-            visualize_normals(normal_x, normal_y, normal_z,normals_path)
-
+            visualize_normals(normal_x, normal_y, normal_z,normals_path,plane_path)
+            
+            print("结束Sobel算子的计算")
+            depth = depth.astype(np.uint8)
             if args.grayscale:
                 depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
             else:
