@@ -1,5 +1,9 @@
 # MINE
-  for test
+
+### run_no.py
+* 不切割直接进行计算
+
+for test
     
     python run.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/UseGeo_2 --outdir /media/hz/新加卷/0mywork/mine/mine_depth_V2_test
 >

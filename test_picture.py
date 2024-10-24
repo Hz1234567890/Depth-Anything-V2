@@ -9,7 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # # 定义地形的高度（z坐标），这里使用一个简单的函数模拟
 # z = np.sin(np.sqrt(x**2 + y**2))
-def threeD_picture(rows, columns,z):
+def threeD_picture(rows, columns,z,filepath):
     x = np.linspace(0, columns, columns)
     y = np.linspace(0, rows, rows)
     x, y = np.meshgrid(x, y)
@@ -25,5 +25,8 @@ def threeD_picture(rows, columns,z):
     ax.set_xlabel('X axis')
     ax.set_ylabel('Y axis')
     ax.set_zlabel('Height (Z axis)')
-
-    plt.show()
+    
+    #保存图像为文件
+    plt.savefig(filepath)
+    # plt.show()
+    

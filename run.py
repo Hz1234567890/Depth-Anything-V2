@@ -54,17 +54,7 @@ if __name__ == '__main__':
 
         files = os.listdir(item_path)
         filenames = [file for file in files if file.endswith('.jpg')]
-    # if os.path.isfile(args.img_path):
-    #     if args.img_path.endswith('txt'):
-    #         with open(args.img_path, 'r') as f:
-    #             filenames = f.read().splitlines()
-    #     else:
-    #         filenames = [args.img_path]
-    # else:
-    #     filenames = glob.glob(os.path.join(args.img_path, '**/*'), recursive=True)
-    
-    # os.makedirs(args.outdir, exist_ok=True)
-    # cmap = matplotlib.colormaps.get_cmap('Spectral_r')
+
 
     
         for k, filename in enumerate(filenames):
@@ -78,9 +68,9 @@ if __name__ == '__main__':
             
             depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
             # depth = depth.astype(np.uint8)
-            rows, columns = depth.shape
-            threeD_picture(rows, columns, depth)
-            input("按下任意键继续...")
+            # rows, columns = depth.shape
+            # threeD_picture(rows, columns, depth)
+            # input("按下任意键继续...")
             # print("归一化之后的深度矩阵",depth)
 
             print("开始Sobel算子的计算")
