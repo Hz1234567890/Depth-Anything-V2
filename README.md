@@ -1,7 +1,9 @@
 # MINE
 
 ### run_no.py
-* 不切割直接进行计算
+* 不切割直接进行计算<br>
+>
+    python run_no.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/UAV_ROD_Data_test --outdir /media/hz/新加卷/0mywork/mine/UAV_ROD_Data_result
 
 for test
     

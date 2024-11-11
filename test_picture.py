@@ -42,7 +42,8 @@ def threeD_picture(rows, columns,depth,filepath):
     # end_time = time.time()
     # print(f"总用时：{end_time-start_time}")
     # print(sorted_points)
-
+    
+    """
     # 输出生成的三维点
     print("生成的三维点：")
     print(points)
@@ -78,7 +79,7 @@ def threeD_picture(rows, columns,depth,filepath):
     print(f"拟合平面的法向量: {plane_normal}")
     print(f"水平面法向量: {horizontal_plane_normal}")
     print(f"夹角: {angle:.2f} 度")
-
+    """
 
     x = np.linspace(0, columns, columns)
     y = np.linspace(0, rows, rows)

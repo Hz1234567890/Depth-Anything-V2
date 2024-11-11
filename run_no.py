@@ -9,7 +9,7 @@ import torch
 from test_picture import threeD_picture
 
 from depth_anything_v2.dpt import DepthAnythingV2
-
+from Variance import variance_plane
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Depth Anything V2')
@@ -69,35 +69,55 @@ if __name__ == '__main__':
         print(f"{file_raw_name}的三维深度图保存于{threeD_filepath}")
         # input("按下任意键继续...")
         threeD_picture(rows, columns, depth,threeD_filepath)
+
+        Gif_filename = f"Gif_{os.path.splitext(os.path.basename(filename))[0]}" + '.gif'
+        Gif_filepath = os.path.join(item_output_folder_path,Gif_filename)
+        # result_filename = f"Result_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        # result_filepath = os.path.join(item_output_folder_path,result_filename)
+        print("现在开始计算depth的方差")
+        window_size = 400
+        top_quarter_windows = variance_plane(depth,window_size,Gif_filepath)
         
         print("原始的深度矩阵",depth)
         
         depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
-        # depth = depth.astype(np.uint8)
+        # # depth = depth.astype(np.uint8)
         
-        # print("归一化之后的深度矩阵",depth)
+        print("归一化之后的深度矩阵",depth)
 
-        print("开始Sobel算子的计算")
+        # print("开始Sobel算子的计算")
         
-        normals_filename = f"annotated_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
-        plane_filename = f"plane_{os.path.splitext(os.path.basename(filename))[0]}"
-        normals_path = os.path.join(item_output_folder_path, normals_filename)
-        plane_path = os.path.join(item_output_folder_path, plane_filename)
-        normal_x, normal_y, normal_z = compute_normal_vectors(depth)
-        visualize_normals(normal_x, normal_y, normal_z,normals_path,plane_path)
+        # normals_filename = f"annotated_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        # plane_filename = f"plane_{os.path.splitext(os.path.basename(filename))[0]}"
+        # normals_path = os.path.join(item_output_folder_path, normals_filename)
+        # plane_path = os.path.join(item_output_folder_path, plane_filename)
+        # normal_x, normal_y, normal_z = compute_normal_vectors(depth)
+        # visualize_normals(normal_x, normal_y, normal_z,normals_path,plane_path)
         
-        print("结束Sobel算子的计算")
+        # print("结束Sobel算子的计算")
         depth = depth.astype(np.uint8)
 
+
+        result_path = os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png')
         if args.grayscale:
             depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
+            depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2GRAY)
         else:
             depth = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(np.uint8)
+            depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2RGB)
         
         if args.pred_only:
-            cv2.imwrite(os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png'), depth)
-        else:
-            split_region = np.ones((raw_image.shape[0], 50, 3), dtype=np.uint8) * 255
-            combined_result = cv2.hconcat([raw_image, split_region, depth])
+            for var, y, x in top_quarter_windows:
+                cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+            cv2.imwrite(result_path, depth_image)
             
-            cv2.imwrite(os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png'), combined_result)
+        else:
+            for var, y, x in top_quarter_windows:
+                cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+                cv2.rectangle(raw_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+            split_region = np.ones((raw_image.shape[0], 50, 3), dtype=np.uint8) * 255
+            combined_result = cv2.hconcat([raw_image, split_region, depth_image])
+            
+            cv2.imwrite(result_path, combined_result)
+            
+        print("结果已经保存到",result_path)
