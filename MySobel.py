@@ -22,8 +22,14 @@ def compute_normal_vectors(depth_matrix):
     normal_x /= normal_length
     normal_y /= normal_length
     normal_z /= normal_length
+
+    # 计算与z轴的夹角（即与水平面夹角的余角）
+    theta = np.arccos(normal_z)
     
-    return normal_x, normal_y, normal_z
+    # 计算与水平面的夹角
+    angle_with_horizontal = np.degrees(theta)
+    
+    return normal_x, normal_y, normal_z,angle_with_horizontal
 
 # 可视化法向量场
 def visualize_normals(normal_x, normal_y, normal_z,filename,plane_filename):

@@ -1,5 +1,14 @@
 # MINE
 
+#### 解决磁盘挂载问题
+    mount | grep /media/hz/新加卷
+    #查看磁盘挂载权限，rw为读写，ro为只读
+
+    sudo mount -o remount,rw /dev/nvme0n1p6 /media/hz/新加卷
+    #以读写重新挂载
+
+    #这里进行完之后，虽然权限修改，但是还是会有问题，我登录了Windows之后再进入Linux就好了。（也可以试试直接进入Windows再进入Linux，还没试过）
+
 ### run_no.py
 * 不切割直接进行计算<br>
 >
