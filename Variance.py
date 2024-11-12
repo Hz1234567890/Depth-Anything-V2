@@ -5,6 +5,8 @@ import matplotlib.patches as patches
 import matplotlib.animation as animation
 from matplotlib.animation import PillowWriter
 import cv2
+from Myglobal import *
+
 
 def variance_plane(depth_matrix,window_size,Gif_file_path):
     # 获取图像中心坐标
@@ -21,8 +23,8 @@ def variance_plane(depth_matrix,window_size,Gif_file_path):
 
     # 遍历滑动窗口并更新矩形位置，计算方差
     frames = []
-    for i in range(0, depth_matrix.shape[0] - window_size + 1, 200):  # 每40步滑动一次
-        for j in range(0, depth_matrix.shape[1] - window_size + 1, 200):
+    for i in range(0, depth_matrix.shape[0] - window_size + 1, step_size):  # 每40步滑动一次
+        for j in range(0, depth_matrix.shape[1] - window_size + 1, step_size):
             # 提取当前窗口
             window = depth_matrix[i:i + window_size, j:j + window_size]
             # 计算方差
@@ -50,3 +52,25 @@ def variance_plane(depth_matrix,window_size,Gif_file_path):
     plt.close()
 
     return top_quarter_windows
+
+
+def distortion_correction():
+    # 提取旋转矩阵 R 的第三列，代表相机坐标系的 z 轴在世界坐标系中的方向
+    z_axis = R[:, 2]
+
+    # 计算 z 轴与水平面的夹角
+    # 水平夹角即为 z 轴向量与垂直方向（世界坐标系 z 轴）的夹角
+    # xita = 相机光轴向量在z轴上的分量与z轴的夹角
+    angle_with_horizontal = np.arccos(z_axis[2] / np.linalg.norm(z_axis)) * (180 / np.pi)  # 转换为角度
+    
+    print(f"开始计算夹角为{angle_with_horizontal}度平面的理论方差")
+    for row in range(window_size):
+        for column in range(window_size):
+            variance = 
+    print("理论方差为")
+    return angle_with_horizontal
+
+if __name__ == '__main__':
+    result = distortion_correction()
+    result = round(result, 6)
+    print(f"夹角为：{result}度")
