@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from scipy.ndimage import generic_filter
-
+from Variance import distortion_correction
 # 假设depth_matrix是深度矩阵
 def compute_normal_vectors(depth_matrix):
     # 使用Sobel算子计算x和y方向的梯度
@@ -28,6 +28,8 @@ def compute_normal_vectors(depth_matrix):
     
     # 计算与水平面的夹角
     angle_with_horizontal = np.degrees(theta)
+    # base_angle = distortion_correction()
+    # angle_with_horizontal = angle_with_horizontal - base_angle
     
     return normal_x, normal_y, normal_z,angle_with_horizontal
 

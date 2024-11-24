@@ -4,12 +4,12 @@ import glob
 import matplotlib
 import numpy as np
 import os
-from MySobel import compute_normal_vectors,visualize_normals 
+# from MySobel import compute_normal_vectors,visualize_normals 
 import torch
 from test_picture import threeD_picture
 
 from depth_anything_v2.dpt import DepthAnythingV2
-from Variance import variance_plane
+from Variance import variance_plane,depth_to_ortho_with_rotation
 from Myglobal import *
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Depth Anything V2')
@@ -64,6 +64,9 @@ if __name__ == '__main__':
         depth = depth_anything.infer_image(raw_image, args.input_size)
         rows, columns = depth.shape
 
+        # 对深度信息进行正则矫正
+        # depth = depth_to_ortho_with_rotation(depth, K, R, T, rows, columns)
+
         threeD_filename = f"threeD_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
         threeD_filepath = os.path.join(item_output_folder_path,threeD_filename)
         print(f"{file_raw_name}的三维深度图保存于{threeD_filepath}")
@@ -72,9 +75,10 @@ if __name__ == '__main__':
 
         Gif_filename = f"Gif_{os.path.splitext(os.path.basename(filename))[0]}" + '.gif'
         Gif_filepath = os.path.join(item_output_folder_path,Gif_filename)
-        # result_filename = f"Result_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
-        # result_filepath = os.path.join(item_output_folder_path,result_filename)
+        result_filename = f"Result_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        result_filepath = os.path.join(item_output_folder_path,result_filename)
         print("现在开始计算depth的方差")
+        
         
         top_quarter_windows = variance_plane(depth,window_size,Gif_filepath)
         
@@ -87,27 +91,28 @@ if __name__ == '__main__':
         # normals_path = os.path.join(item_output_folder_path, normals_filename)
         # plane_path = os.path.join(item_output_folder_path, plane_filename)
         # normal_x, normal_y, normal_z ,angle_with_horizontal= compute_normal_vectors(depth)
-        # #################################################################################################
-        # vectors_results_filepath = os.path.join(item_output_folder_path,"normal_vectors_results.txt")
-        # with open(vectors_results_filepath, 'w') as f:
-        #     # 写入 normal_x 矩阵
-        #     f.write("normal_x:\n")
-        #     np.savetxt(f, normal_x, fmt='%.2f')
+        # top_quarter_windows = variance_plane(angle_with_horizontal,window_size,Gif_filepath)
+        # # #################################################################################################
+        # # vectors_results_filepath = os.path.join(item_output_folder_path,"normal_vectors_results.txt")
+        # # with open(vectors_results_filepath, 'w') as f:
+        # #     # 写入 normal_x 矩阵
+        # #     f.write("normal_x:\n")
+        # #     np.savetxt(f, normal_x, fmt='%.2f')
             
-        #     # 写入 normal_y 矩阵
-        #     f.write("\nnormal_y:\n")
-        #     np.savetxt(f, normal_y, fmt='%.2f')
+        # #     # 写入 normal_y 矩阵
+        # #     f.write("\nnormal_y:\n")
+        # #     np.savetxt(f, normal_y, fmt='%.2f')
             
-        #     # 写入 normal_z 矩阵
-        #     f.write("\nnormal_z:\n")
-        #     np.savetxt(f, normal_z, fmt='%.2f')
+        # #     # 写入 normal_z 矩阵
+        # #     f.write("\nnormal_z:\n")
+        # #     np.savetxt(f, normal_z, fmt='%.2f')
             
-        #     # 写入 angle_with_horizontal 矩阵
-        #     f.write("\nangle_with_horizontal:\n")
-        #     np.savetxt(f, angle_with_horizontal, fmt='%.2f')
-        # print("结果已写入 normal_vectors_results.txt")
-        # ####################################################################################################
-        # # visualize_normals(normal_x, normal_y, normal_z,normals_path,plane_path)
+        # #     # 写入 angle_with_horizontal 矩阵
+        # #     f.write("\nangle_with_horizontal:\n")
+        # #     np.savetxt(f, angle_with_horizontal, fmt='%.2f')
+        # # print("结果已写入 normal_vectors_results.txt")
+        # # ####################################################################################################
+        # visualize_normals(normal_x, normal_y, normal_z,normals_path,plane_path)
         
         # print("结束Sobel算子的计算")
 
