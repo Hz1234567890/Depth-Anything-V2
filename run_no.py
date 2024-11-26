@@ -9,7 +9,7 @@ import torch
 from test_picture import threeD_picture
 
 from depth_anything_v2.dpt import DepthAnythingV2
-from Variance import variance_plane,depth_to_ortho_with_rotation
+from Variance import variance_plane,depth_to_ortho_with_rotation,apply_pitch_transform
 from Myglobal import *
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Depth Anything V2')
@@ -45,8 +45,7 @@ if __name__ == '__main__':
         os.makedirs(args.outdir, exist_ok=True)
 
     files = os.listdir(args.img_path)
-    filenames = [file for file in files if file.endswith('.jpg')]
-
+    filenames = [file for file in files if file.endswith('.jpeg')]
 
     for k, filename in enumerate(filenames):
         print(f'Progress {k+1}/{len(filenames)}: {filename}')
@@ -61,10 +60,16 @@ if __name__ == '__main__':
         
         raw_image = cv2.imread(filename)
         
+        # # 对RGB影像进行云台透视矫正
+        # Rotation_filename = f"Rotation_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        # Rotation_filepath = os.path.join(item_output_folder_path,Rotation_filename)
+        # raw_image = apply_pitch_transform(raw_image, pitch_angle, K)
+        # cv2.imwrite(Rotation_filepath, raw_image)
+
         depth = depth_anything.infer_image(raw_image, args.input_size)
         rows, columns = depth.shape
 
-        # 对深度信息进行正则矫正
+        # #对深度信息进行正则矫正
         # depth = depth_to_ortho_with_rotation(depth, K, R, T, rows, columns)
 
         threeD_filename = f"threeD_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'

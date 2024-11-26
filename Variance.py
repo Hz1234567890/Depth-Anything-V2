@@ -7,6 +7,75 @@ from matplotlib.animation import PillowWriter
 import cv2
 from Myglobal import *
 
+import cv2
+import numpy as np
+
+
+def compute_pitch_matrix(pitch_angle):
+    """
+    计算仰角旋转矩阵
+    :param pitch_angle: 仰角（角度）
+    :return: 旋转矩阵 (3x3)
+    """
+    phi = np.deg2rad(pitch_angle)  # 角度转弧度
+    R_pitch = np.array([
+        [1, 0, 0],
+        [0, np.cos(phi), -np.sin(phi)],
+        [0, np.sin(phi), np.cos(phi)]
+    ])
+    return R_pitch
+
+def apply_pitch_transform(image, pitch_angle, K):
+    """
+    对图像应用仰角透视变换
+    :param image: 输入图像
+    :param pitch_angle: 仰角（角度）
+    :param K: 相机内参矩阵
+    :return: 透视变换后的图像
+    """
+    h, w = image.shape[:2]
+    R_pitch = compute_pitch_matrix(pitch_angle)  # 计算旋转矩阵
+
+    # 计算透视变换矩阵 H
+    K_inv = np.linalg.inv(K)
+    H = K @ R_pitch @ K_inv
+
+    # 应用透视变换
+    transformed_image = cv2.warpPerspective(image, H, (w, h))
+    return transformed_image
+
+
+def apply_rotation(image, R, K):
+    """
+    使用相机旋转矩阵对图像进行透视变换
+    :param image: 输入图像
+    :param R: 相机外参旋转矩阵 (3x3)
+    :param K: 相机内参矩阵 (3x3)
+    :return: 透视变换后的图像
+    """
+    h, w = image.shape[:2]
+
+    # 计算 K * R * K^-1
+    K_inv = np.linalg.inv(K)
+    H = K @ R @ K_inv
+
+    # 应用透视变换
+    transformed_image = cv2.warpPerspective(image, H, (w, h))
+    return transformed_image
+
+
+
+# # 读取图像并应用变换
+# image = cv2.imread("example.jpg")
+# transformed_image = apply_rotation(image, R, K)
+
+# # 显示结果
+# cv2.imshow("Original Image", image)
+# cv2.imshow("Transformed Image", transformed_image)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+
+
 def depth_to_ortho_with_rotation(depth_map, K, R, T, img_width, img_height):
     """
     将倾斜视角下的深度图转为正射视角深度图
