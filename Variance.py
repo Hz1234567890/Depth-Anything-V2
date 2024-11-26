@@ -10,7 +10,6 @@ from Myglobal import *
 import cv2
 import numpy as np
 
-
 def compute_pitch_matrix(pitch_angle):
     """
     计算仰角旋转矩阵
@@ -44,6 +43,41 @@ def apply_pitch_transform(image, pitch_angle, K):
     transformed_image = cv2.warpPerspective(image, H, (w, h))
     return transformed_image
 
+def get_perspective_matrix(yaw, pitch, roll):
+    # 角度转弧度
+    yaw = np.deg2rad(yaw)
+    pitch = np.deg2rad(pitch)
+    roll = np.deg2rad(roll)
+
+    # 偏航矩阵
+    Ryaw = np.array([
+        [np.cos(yaw), 0, np.sin(yaw), 0],
+        [0, 1, 0, 0],
+        [-np.sin(yaw), 0, np.cos(yaw), 0],
+        [0, 0, 0, 1]
+    ])
+
+    # 俯仰矩阵
+    Rpitch = np.array([
+        [1, 0, 0, 0],
+        [0, np.cos(pitch), -np.sin(pitch), 0],
+        [0, np.sin(pitch), np.cos(pitch), 0],
+        [0, 0, 0, 1]
+    ])
+
+    # 滚动矩阵
+    Rroll = np.array([
+        [np.cos(roll), -np.sin(roll), 0, 0],
+        [np.sin(roll), np.cos(roll), 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ])
+
+    # 综合矩阵
+    R = Rroll @ Rpitch @ Ryaw
+
+    # 取 3x3 的部分
+    return R[:3, :3]
 
 def apply_rotation(image, R, K):
     """
@@ -76,53 +110,6 @@ def apply_rotation(image, R, K):
 # cv2.destroyAllWindows()
 
 
-def depth_to_ortho_with_rotation(depth_map, K, R, T, img_width, img_height):
-    """
-    将倾斜视角下的深度图转为正射视角深度图
-    
-    参数：
-    depth_map: 倾斜视角下的深度图 (H x W)
-    K: 相机内参矩阵 (3 x 3)
-    R: 相机旋转矩阵 (3 x 3)
-    T: 相机平移向量 (3 x 1)
-    img_width: 图像宽度
-    img_height: 图像高度
-    
-    返回：
-    正射视角下的深度图 (H x W)
-    """
-    # 获取图像尺寸
-    H, W = depth_map.shape
-    
-    # 创建像素网格
-    u, v = np.meshgrid(np.arange(W), np.arange(H))
-    
-    # 将像素坐标转为齐次坐标
-    pixels_h = np.stack([u.ravel(), v.ravel(), np.ones_like(u).ravel()], axis=0)
-    
-    # 深度展开
-    depths = depth_map.ravel()
-    
-    # 将像素坐标转为相机坐标
-    camera_coords = np.linalg.inv(K) @ (pixels_h * depths)
-    
-    # 转换到世界坐标
-    world_coords = R @ camera_coords + T
-    
-    # 重新投影到正射平面 (z=0)
-    ortho_coords = world_coords[:2] / world_coords[2]
-    
-    # 创建正射视角的深度图
-    ortho_depth_map = np.zeros_like(depth_map)
-    for i in range(len(ortho_coords[0])):
-        x, y = int(ortho_coords[0, i]), int(ortho_coords[1, i])
-        if 0 <= x < img_width and 0 <= y < img_height:
-            ortho_depth_map[y, x] = depths[i]
-    
-    return ortho_depth_map
-
-
-
 def variance_plane(depth_matrix,window_size,Gif_file_path):
     # 获取图像中心坐标
     center_x, center_y = depth_matrix.shape[1] // 2, depth_matrix.shape[0] // 2
@@ -138,7 +125,7 @@ def variance_plane(depth_matrix,window_size,Gif_file_path):
 
     # 遍历滑动窗口并更新矩形位置，计算方差
     frames = []
-    for i in range(0, depth_matrix.shape[0] - window_size + 1, step_size):  # 每40步滑动一次
+    for i in range(0, depth_matrix.shape[0] - window_size + 1, step_size):  # 每step_size步滑动一次
         for j in range(0, depth_matrix.shape[1] - window_size + 1, step_size):
             # 提取当前窗口
             window = depth_matrix[i:i + window_size, j:j + window_size]
@@ -167,27 +154,3 @@ def variance_plane(depth_matrix,window_size,Gif_file_path):
     plt.close()
 
     return top_quarter_windows
-
-# def angle_correction():
-#     return 0
-
-# def distortion_correction():
-#     # 提取旋转矩阵 R 的第三列，代表相机坐标系的 z 轴在世界坐标系中的方向
-#     z_axis = R[:, 2]
-
-#     # 计算 z 轴与水平面的夹角
-#     # 水平夹角即为 z 轴向量与垂直方向（世界坐标系 z 轴）的夹角
-#     # xita = 相机光轴向量在z轴上的分量与z轴的夹角
-#     angle_with_horizontal = np.arccos(z_axis[2] / np.linalg.norm(z_axis)) * (180 / np.pi)  # 转换为角度
-    
-#     # print(f"开始计算夹角为{angle_with_horizontal}度平面的理论方差")
-#     # # for row in range(window_size):
-#     # #     for column in range(window_size):
-#     # #         variance = 
-#     # print("理论方差为")
-#     return angle_with_horizontal
-
-if __name__ == '__main__':
-    result = distortion_correction()
-    result = round(result, 6)
-    print(f"夹角为：{result}度")

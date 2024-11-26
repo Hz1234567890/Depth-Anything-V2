@@ -9,7 +9,7 @@ import torch
 from test_picture import threeD_picture
 
 from depth_anything_v2.dpt import DepthAnythingV2
-from Variance import variance_plane,depth_to_ortho_with_rotation,apply_pitch_transform
+from Variance import *
 from Myglobal import *
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Depth Anything V2')
@@ -60,17 +60,25 @@ if __name__ == '__main__':
         
         raw_image = cv2.imread(filename)
         
-        # # 对RGB影像进行云台透视矫正
-        # Rotation_filename = f"Rotation_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
-        # Rotation_filepath = os.path.join(item_output_folder_path,Rotation_filename)
-        # raw_image = apply_pitch_transform(raw_image, pitch_angle, K)
+        # 对RGB影像进行云台透视矫正
+        Rotation_filename = f"Rotation_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        Rotation_filepath = os.path.join(item_output_folder_path,Rotation_filename)
+        
+        # pitch only
+        raw_image = apply_pitch_transform(raw_image, pitch_angle, K)
+        cv2.imwrite(Rotation_filepath, raw_image)
+
+        # yaw = 1
+        # pitch = 1
+        # roll = 1
+        # # all 
+        # R = get_perspective_matrix(yaw,pitch,roll)
+        # raw_image = apply_rotation(raw_image, R, K)
         # cv2.imwrite(Rotation_filepath, raw_image)
+
 
         depth = depth_anything.infer_image(raw_image, args.input_size)
         rows, columns = depth.shape
-
-        # #对深度信息进行正则矫正
-        # depth = depth_to_ortho_with_rotation(depth, K, R, T, rows, columns)
 
         threeD_filename = f"threeD_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
         threeD_filepath = os.path.join(item_output_folder_path,threeD_filename)
@@ -88,38 +96,6 @@ if __name__ == '__main__':
         top_quarter_windows = variance_plane(depth,window_size,Gif_filepath)
         
         print("原始的深度矩阵",depth)
-
-        # print("开始Sobel算子的计算")
-        
-        # normals_filename = f"annotated_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
-        # plane_filename = f"plane_{os.path.splitext(os.path.basename(filename))[0]}"
-        # normals_path = os.path.join(item_output_folder_path, normals_filename)
-        # plane_path = os.path.join(item_output_folder_path, plane_filename)
-        # normal_x, normal_y, normal_z ,angle_with_horizontal= compute_normal_vectors(depth)
-        # top_quarter_windows = variance_plane(angle_with_horizontal,window_size,Gif_filepath)
-        # # #################################################################################################
-        # # vectors_results_filepath = os.path.join(item_output_folder_path,"normal_vectors_results.txt")
-        # # with open(vectors_results_filepath, 'w') as f:
-        # #     # 写入 normal_x 矩阵
-        # #     f.write("normal_x:\n")
-        # #     np.savetxt(f, normal_x, fmt='%.2f')
-            
-        # #     # 写入 normal_y 矩阵
-        # #     f.write("\nnormal_y:\n")
-        # #     np.savetxt(f, normal_y, fmt='%.2f')
-            
-        # #     # 写入 normal_z 矩阵
-        # #     f.write("\nnormal_z:\n")
-        # #     np.savetxt(f, normal_z, fmt='%.2f')
-            
-        # #     # 写入 angle_with_horizontal 矩阵
-        # #     f.write("\nangle_with_horizontal:\n")
-        # #     np.savetxt(f, angle_with_horizontal, fmt='%.2f')
-        # # print("结果已写入 normal_vectors_results.txt")
-        # # ####################################################################################################
-        # visualize_normals(normal_x, normal_y, normal_z,normals_path,plane_path)
-        
-        # print("结束Sobel算子的计算")
 
         depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
         # # depth = depth.astype(np.uint8)
