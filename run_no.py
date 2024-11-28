@@ -11,6 +11,7 @@ from test_picture import threeD_picture
 from depth_anything_v2.dpt import DepthAnythingV2
 from Variance import *
 from Myglobal import *
+from exif import *
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Depth Anything V2')
     
@@ -45,7 +46,7 @@ if __name__ == '__main__':
         os.makedirs(args.outdir, exist_ok=True)
 
     files = os.listdir(args.img_path)
-    filenames = [file for file in files if file.endswith('.jpeg')]
+    filenames = [file for file in files if file.endswith('.JPG')]
 
     for k, filename in enumerate(filenames):
         print(f'Progress {k+1}/{len(filenames)}: {filename}')
@@ -58,6 +59,8 @@ if __name__ == '__main__':
         if not os.path.exists(item_output_folder_path):
             os.makedirs(item_output_folder_path, exist_ok=True)
         
+        yaw,pitch,roll = get_gimbal_data(filename)
+
         raw_image = cv2.imread(filename)
         
         # 对RGB影像进行云台透视矫正
@@ -65,7 +68,7 @@ if __name__ == '__main__':
         Rotation_filepath = os.path.join(item_output_folder_path,Rotation_filename)
         
         # pitch only
-        raw_image = apply_pitch_transform(raw_image, pitch_angle, K)
+        raw_image = apply_pitch_transform(raw_image, pitch, K)
         cv2.imwrite(Rotation_filepath, raw_image)
 
         # yaw = 1
@@ -80,6 +83,11 @@ if __name__ == '__main__':
         depth = depth_anything.infer_image(raw_image, args.input_size)
         rows, columns = depth.shape
 
+        # 根据图像大小初始化window_size和step_size
+        window_size = find_max_x(rows,columns)
+        step_size = int(window_size/2)
+        print(f"window_size={window_size}   step_size={step_size}")
+
         threeD_filename = f"threeD_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
         threeD_filepath = os.path.join(item_output_folder_path,threeD_filename)
         print(f"{file_raw_name}的三维深度图保存于{threeD_filepath}")
@@ -93,7 +101,7 @@ if __name__ == '__main__':
         print("现在开始计算depth的方差")
         
         
-        top_quarter_windows = variance_plane(depth,window_size,Gif_filepath)
+        top_tenth_windows = variance_plane(depth,window_size,step_size,Gif_filepath)
         
         print("原始的深度矩阵",depth)
 
@@ -113,12 +121,12 @@ if __name__ == '__main__':
             depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2RGB)
         
         if args.pred_only:
-            for var, y, x in top_quarter_windows:
+            for var, y, x in top_tenth_windows:
                 cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
             cv2.imwrite(result_path, depth_image)
             
         else:
-            for var, y, x in top_quarter_windows:
+            for var, y, x in top_tenth_windows:
                 cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
                 cv2.rectangle(raw_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
             split_region = np.ones((raw_image.shape[0], 50, 3), dtype=np.uint8) * 255

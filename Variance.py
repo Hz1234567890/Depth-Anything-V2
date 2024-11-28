@@ -16,6 +16,7 @@ def compute_pitch_matrix(pitch_angle):
     :param pitch_angle: 仰角（角度）
     :return: 旋转矩阵 (3x3)
     """
+    pitch_angle = 90 + pitch_angle
     phi = np.deg2rad(pitch_angle)  # 角度转弧度
     R_pitch = np.array([
         [1, 0, 0],
@@ -26,21 +27,54 @@ def compute_pitch_matrix(pitch_angle):
 
 def apply_pitch_transform(image, pitch_angle, K):
     """
-    对图像应用仰角透视变换
+    对图像应用仰角透视变换并居中调整
     :param image: 输入图像
     :param pitch_angle: 仰角（角度）
     :param K: 相机内参矩阵
-    :return: 透视变换后的图像
+    :return: 居中调整后的图像
     """
     h, w = image.shape[:2]
-    R_pitch = compute_pitch_matrix(pitch_angle)  # 计算旋转矩阵
+    R_pitch = compute_pitch_matrix(pitch_angle)
 
     # 计算透视变换矩阵 H
     K_inv = np.linalg.inv(K)
     H = K @ R_pitch @ K_inv
 
-    # 应用透视变换
-    transformed_image = cv2.warpPerspective(image, H, (w, h))
+    # 计算变换后的图像四个角点位置
+    corners = np.array([[0, 0, 1], [w, 0, 1], [w, h, 1], [0, h, 1]])
+    transformed_corners = H @ corners.T
+    transformed_corners /= transformed_corners[2, :]  # 归一化
+    transformed_corners = transformed_corners[:2, :].T
+
+    # 计算有效区域的包围盒
+    min_x = max(0, int(np.min(transformed_corners[:, 0])))
+    max_x = min(w, int(np.max(transformed_corners[:, 0])))
+    min_y = max(0, int(np.min(transformed_corners[:, 1])))
+    max_y = min(h, int(np.max(transformed_corners[:, 1])))
+
+    # # 应用透视变换
+    # transformed_image = cv2.warpPerspective(image, H, (w, h))
+
+    # # 裁剪有效区域
+    # cropped = transformed_image[min_y:max_y, min_x:max_x]
+
+    # # 计算变换后图像的尺寸
+    # new_w = max_x - min_x
+    # new_h = max_y - min_y
+
+    # 计算变换后图像的尺寸
+    new_w = max_x - min_x
+    new_h = max_y - min_y
+
+    # 应用透视变换，得到变换后的图像
+    transformed_image = cv2.warpPerspective(image, H, (new_w, new_h))
+
+    # # 将裁剪图像居中到原始尺寸
+    # centered_image = np.zeros_like(image)  # 创建空白图像
+    # start_y = (h - (max_y - min_y)) // 2
+    # start_x = (w - (max_x - min_x)) // 2
+    # centered_image[start_y:start_y + cropped.shape[0], start_x:start_x + cropped.shape[1]] = cropped
+    # centered_image = cv2.resize(centered_image, (w, h), interpolation=cv2.INTER_LINEAR)
     return transformed_image
 
 def get_perspective_matrix(yaw, pitch, roll):
@@ -110,18 +144,18 @@ def apply_rotation(image, R, K):
 # cv2.destroyAllWindows()
 
 
-def variance_plane(depth_matrix,window_size,Gif_file_path):
+def variance_plane(depth_matrix,window_size,step_size,Gif_file_path):
     # 获取图像中心坐标
     center_x, center_y = depth_matrix.shape[1] // 2, depth_matrix.shape[0] // 2
 
     # 定义一个列表来存储每个窗口的方差及其位置
     variance_list = []
 
-    # 初始化绘图
-    fig, ax = plt.subplots()
-    ax.imshow(depth_matrix, cmap='gray')
-    rect = patches.Rectangle((0, 0), window_size, window_size, linewidth=2, edgecolor='r', facecolor='none')
-    ax.add_patch(rect)
+    # # 初始化绘图
+    # fig, ax = plt.subplots()
+    # ax.imshow(depth_matrix, cmap='gray')
+    # rect = patches.Rectangle((0, 0), window_size, window_size, linewidth=2, edgecolor='r', facecolor='none')
+    # ax.add_patch(rect)
 
     # 遍历滑动窗口并更新矩形位置，计算方差
     frames = []
@@ -137,20 +171,20 @@ def variance_plane(depth_matrix,window_size,Gif_file_path):
 
     # 按方差排序，选择最小的前15个
     variance_list.sort(key=lambda x: x[0])
-    quarter_index = len(variance_list) // 4  # 计算一半的索引
+    quarter_index = len(variance_list) // 10  # 计算一半的索引
     top_quarter_windows = variance_list[:quarter_index]  # 取出排名前一半的元素
 
-    # 动画更新函数
-    def update(frame):
-        x, y = frame
-        rect.set_xy((x, y))
-        return rect,
+    # # 动画更新函数
+    # def update(frame):
+    #     x, y = frame
+    #     rect.set_xy((x, y))
+    #     return rect,
 
-    # 创建动图
-    ani = animation.FuncAnimation(fig, update, frames=frames, blit=True, interval=50)
+    # # 创建动图
+    # ani = animation.FuncAnimation(fig, update, frames=frames, blit=True, interval=50)
 
-    # 保存滑动过程的动图
-    ani.save(Gif_file_path, writer=PillowWriter(fps=10))
-    plt.close()
+    # # 保存滑动过程的动图
+    # ani.save(Gif_file_path, writer=PillowWriter(fps=10))
+    # plt.close()
 
     return top_quarter_windows
