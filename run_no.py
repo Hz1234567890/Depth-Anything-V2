@@ -11,6 +11,7 @@ from test_picture import threeD_picture
 from depth_anything_v2.dpt import DepthAnythingV2
 from Variance import *
 from Myglobal import *
+from MyCanny import Canny
 from exif import *
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Depth Anything V2')
@@ -21,7 +22,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--encoder', type=str, default='vits', choices=['vits', 'vitb', 'vitl', 'vitg'])
     
-    parser.add_argument('--pred-only', dest='pred_only', action='store_true', help='only display the prediction')
+    parser.add_argument('--pred-only', default=False, dest='pred_only', action='store_true', help='only display the prediction')
     parser.add_argument('--grayscale', dest='grayscale', action='store_true', help='do not apply colorful palette')
     
     args = parser.parse_args()
@@ -62,30 +63,35 @@ if __name__ == '__main__':
         yaw,pitch,roll = get_gimbal_data(filename)
 
         raw_image = cv2.imread(filename)
-        
+        h, w = raw_image.shape[:2]
+        original_size=(h,w)
+        print(f"original_size={original_size}")
         # 对RGB影像进行云台透视矫正
         Rotation_filename = f"Rotation_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
         Rotation_filepath = os.path.join(item_output_folder_path,Rotation_filename)
         
         # pitch only
-        raw_image = apply_pitch_transform(raw_image, pitch,roll, K)
-        cv2.imwrite(Rotation_filepath, raw_image)
+        rotation_image = apply_pitch_transform(raw_image, pitch,roll, K)
+        cv2.imwrite(Rotation_filepath, rotation_image)
 
-        # yaw = 1
-        # pitch = 1
-        # roll = 1
+        # Boundary_filename = f"Boundary_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        # Boundary_filepath = os.path.join(item_output_folder_path,Boundary_filename)
+        # print("开始边界检测")
+        # Canny(rotation_image,Boundary_filepath)
+        
+
         # # all 
         # R = get_perspective_matrix(yaw,pitch,roll)
         # raw_image = apply_rotation(raw_image, R, K)
         # cv2.imwrite(Rotation_filepath, raw_image)
 
 
-        # depth = depth_anything.infer_image(raw_image, args.input_size)
-        # rows, columns = depth.shape
+        depth = depth_anything.infer_image(rotation_image, args.input_size)
+        rows, columns = depth.shape
 
-        # # 根据图像大小初始化window_size和step_size
-        # window_size = find_max_x(rows,columns)
-        # step_size = int(window_size/2)
+        # 根据图像大小初始化window_size和step_size
+        window_size = find_max_x(rows,columns)
+        step_size = int(window_size/2)
         # print(f"window_size={window_size}   step_size={step_size}")
 
         # threeD_filename = f"threeD_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
@@ -94,44 +100,47 @@ if __name__ == '__main__':
         # # input("按下任意键继续...")
         # threeD_picture(rows, columns, depth,threeD_filepath)
 
-        # Gif_filename = f"Gif_{os.path.splitext(os.path.basename(filename))[0]}" + '.gif'
-        # Gif_filepath = os.path.join(item_output_folder_path,Gif_filename)
-        # result_filename = f"Result_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
-        # result_filepath = os.path.join(item_output_folder_path,result_filename)
+        Gif_filename = f"Gif_{os.path.splitext(os.path.basename(filename))[0]}" + '.gif'
+        Gif_filepath = os.path.join(item_output_folder_path,Gif_filename)
+        result_filename = f"Result_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        result_filepath = os.path.join(item_output_folder_path,result_filename)
         # print("现在开始计算depth的方差")
         
         
-        # top_tenth_windows = variance_plane(depth,window_size,step_size,Gif_filepath)
+        top_tenth_windows = variance_plane(depth,window_size,step_size,Gif_filepath)
         
         # print("原始的深度矩阵",depth)
 
-        # depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
-        # # # depth = depth.astype(np.uint8)
+        depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
+        depth = depth.astype(np.uint8)
         
         # print("归一化之后的深度矩阵",depth)
-        # depth = depth.astype(np.uint8)
+        depth = depth.astype(np.uint8)
 
 
-        # result_path = os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png')
-        # if args.grayscale:
-        #     depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
-        #     depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2GRAY)
-        # else:
-        #     depth = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(np.uint8)
-        #     depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2RGB)
+        result_path = os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png')
+        if args.grayscale:
+            depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
+            depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2GRAY)
+        else:
+            depth = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(np.uint8)
+            depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2RGB)
         
-        # if args.pred_only:
-        #     for var, y, x in top_tenth_windows:
-        #         cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
-        #     cv2.imwrite(result_path, depth_image)
+        if args.pred_only:
+            for var, y, x in top_tenth_windows:
+                cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+            # depth_image=inverse_pitch_transform(depth_image, pitch,roll, K)
+            cv2.imwrite(result_path, depth_image)
             
-        # else:
-        #     for var, y, x in top_tenth_windows:
-        #         cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
-        #         cv2.rectangle(raw_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
-        #     split_region = np.ones((raw_image.shape[0], 50, 3), dtype=np.uint8) * 255
-        #     combined_result = cv2.hconcat([raw_image, split_region, depth_image])
+        else:
+            for var, y, x in top_tenth_windows:
+                cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+                cv2.rectangle(rotation_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+            # depth_image=inverse_pitch_transform(depth_image, pitch,roll, K)
+            # rotation_image=inverse_pitch_transform(rotation_image, pitch,roll, K)
+            split_region = np.ones((rotation_image.shape[0], 50, 3), dtype=np.uint8) * 255
+            combined_result = cv2.hconcat([rotation_image, split_region, depth_image])
             
-        #     cv2.imwrite(result_path, combined_result)
+            cv2.imwrite(result_path, combined_result)
             
-        # print("结果已经保存到",result_path)
+        print("结果已经保存到",result_path)

@@ -1,5 +1,5 @@
 import numpy as np
-import cv2 as cv
+import cv2
 import matplotlib.pyplot as plt
 
 def smooth(image, sigma = 1.4, length = 5):
@@ -167,24 +167,33 @@ def double_threshold(nms, threshold1, threshold2):
     return output_image
            
     
-    
+def Canny(image,path):
+    # 将 BGR 转换为灰度图
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    smoothed_image = smooth(gray_image)
+    gradients, direction = get_gradient_and_direction(smoothed_image)
+    nms = NMS(gradients, direction)
+    output_image = double_threshold(nms, 40, 100)
+    cv2.imwrite(path, output_image)
+
 
 if __name__ == "__main__":
     # code to read image
-    test_jpg='/media/hz/新加卷/0mywork/mine/标定图片/dji1/DJI_0436.JPG'
-    image = cv.imread(test_jpg,0)
+    test_jpg='/media/hz/新加卷/0mywork/mine/标定图片/dji1_out/DJI_0437/Rotation_DJI_0437.png'
+    image = cv2.imread(test_jpg,0)
     # 调整图片大小为 640x480
-    image = cv.resize(image, (1280, 960))
+    image = cv2.resize(image, (1280, 960))
 
-    cv.imshow("Original",image)
+    cv2.imshow("Original",image)
     smoothed_image = smooth(image)
-    cv.imshow("GaussinSmooth(5*5)",smoothed_image)
+    cv2.imshow("GaussinSmooth(5*5)",smoothed_image)
     gradients, direction = get_gradient_and_direction(smoothed_image)
     print(gradients)
     print(direction)
     nms = NMS(gradients, direction)
     output_image = double_threshold(nms, 40, 100)
-    cv.imshow("outputImage",output_image)
+    cv2.imshow("outputImage",output_image)
     # 等待按键，按下任意键后关闭窗口
-    cv.waitKey(0)
-    cv.destroyAllWindows()
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()

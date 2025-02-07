@@ -18,7 +18,7 @@ def compute_pitch_matrix(pitch_angle, roll_angle):
     :return: 仰角和滚转角的旋转矩阵 (3x3)
     """
     # 将角度转换为弧度
-    pitch_angle = -pitch_angle  # 仰角的定义方式
+    pitch_angle = 90 + pitch_angle  # 仰角的定义方式
     roll_angle = roll_angle  # 滚转角
 
     # 计算仰角（pitch）的旋转矩阵
@@ -68,96 +68,49 @@ def apply_pitch_transform(image, pitch_angle,roll_angle ,K):
     min_y = max(0, int(np.min(transformed_corners[:, 1])))
     max_y = min(h, int(np.max(transformed_corners[:, 1])))
 
-    # # 应用透视变换
-    # transformed_image = cv2.warpPerspective(image, H, (w, h))
-
-    # # 裁剪有效区域
-    # cropped = transformed_image[min_y:max_y, min_x:max_x]
-
-    # # 计算变换后图像的尺寸
-    # new_w = max_x - min_x
-    # new_h = max_y - min_y
-
     # 计算变换后图像的尺寸
     new_w = max_x - min_x
     new_h = max_y - min_y
+    # 计算平移变换，使图像居中
+    translation_matrix = np.array([
+        [1, 0, -min_x],
+        [0, 1, -min_y],
+        [0, 0, 1]
+    ])
 
     # 应用透视变换，得到变换后的图像
     transformed_image = cv2.warpPerspective(image, H, (new_w, new_h))
+    # transformed_image = cv2.warpPerspective(image, H, (w, h))
 
-    # # 将裁剪图像居中到原始尺寸
-    # centered_image = np.zeros_like(image)  # 创建空白图像
-    # start_y = (h - (max_y - min_y)) // 2
-    # start_x = (w - (max_x - min_x)) // 2
-    # centered_image[start_y:start_y + cropped.shape[0], start_x:start_x + cropped.shape[1]] = cropped
-    # centered_image = cv2.resize(centered_image, (w, h), interpolation=cv2.INTER_LINEAR)
+
     return transformed_image
 
-def get_perspective_matrix(yaw, pitch, roll):
-    # 角度转弧度
-    yaw = np.deg2rad(yaw)
-    pitch = np.deg2rad(pitch)
-    roll = np.deg2rad(roll)
-
-    # 偏航矩阵
-    Ryaw = np.array([
-        [np.cos(yaw), 0, np.sin(yaw), 0],
-        [0, 1, 0, 0],
-        [-np.sin(yaw), 0, np.cos(yaw), 0],
-        [0, 0, 0, 1]
-    ])
-
-    # 俯仰矩阵
-    Rpitch = np.array([
-        [1, 0, 0, 0],
-        [0, np.cos(pitch), -np.sin(pitch), 0],
-        [0, np.sin(pitch), np.cos(pitch), 0],
-        [0, 0, 0, 1]
-    ])
-
-    # 滚动矩阵
-    Rroll = np.array([
-        [np.cos(roll), -np.sin(roll), 0, 0],
-        [np.sin(roll), np.cos(roll), 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]
-    ])
-
-    # 综合矩阵
-    R = Rroll @ Rpitch @ Ryaw
-
-    # 取 3x3 的部分
-    return R[:3, :3]
-
-def apply_rotation(image, R, K):
+def inverse_pitch_transform(image, pitch_angle, roll_angle, K):
     """
-    使用相机旋转矩阵对图像进行透视变换
-    :param image: 输入图像
-    :param R: 相机外参旋转矩阵 (3x3)
-    :param K: 相机内参矩阵 (3x3)
-    :return: 透视变换后的图像
+    使用逆透视变换将经过 apply_pitch_transform 变换后的图像恢复。
+    :param image: 已经过透视变换后的图像
+    :param pitch_angle: 原先对图像应用的仰角（角度）
+    :param roll_angle: 原先对图像应用的滚转角（角度）
+    :param K: 相机内参矩阵
+    :return: 恢复后的图像
     """
     h, w = image.shape[:2]
-
-    # 计算 K * R * K^-1
+    
+    # 1. 先获取原先对图像进行透视变换时的单应矩阵 H
+    #    也就是 apply_pitch_transform 里的 H = K @ R @ K_inv
+    R_pitch = compute_pitch_matrix(pitch_angle, roll_angle)
+    
     K_inv = np.linalg.inv(K)
-    H = K @ R @ K_inv
+    H = K @ R_pitch @ K_inv
+    
+    # 2. 计算逆矩阵 H_inv
+    H_inv = np.linalg.inv(H)
+    
+    # 3. 使用 H_inv 对图像进行逆透视变换
+    restored_image = cv2.warpPerspective(image, H_inv, (w, h))
+    
+    return restored_image
 
-    # 应用透视变换
-    transformed_image = cv2.warpPerspective(image, H, (w, h))
-    return transformed_image
-
-
-
-# # 读取图像并应用变换
-# image = cv2.imread("example.jpg")
-# transformed_image = apply_rotation(image, R, K)
-
-# # 显示结果
-# cv2.imshow("Original Image", image)
-# cv2.imshow("Transformed Image", transformed_image)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
 
 
 def variance_plane(depth_matrix,window_size,step_size,Gif_file_path):
@@ -187,8 +140,11 @@ def variance_plane(depth_matrix,window_size,step_size,Gif_file_path):
 
     # 按方差排序，选择最小的前15个
     variance_list.sort(key=lambda x: x[0])
-    quarter_index = len(variance_list) // 10  # 计算一半的索引
-    top_quarter_windows = variance_list[:quarter_index]  # 取出排名前一半的元素
+    """
+    # quarter_index = len(variance_list) // 10  # 计算一半的索引
+    # top_quarter_windows = variance_list[:quarter_index]  # 取出排名前一半的元素
+    """
+    top_quarter_windows = variance_list[0]
 
     # # 动画更新函数
     # def update(frame):
