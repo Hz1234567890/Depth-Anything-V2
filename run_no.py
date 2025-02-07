@@ -68,7 +68,7 @@ if __name__ == '__main__':
         Rotation_filepath = os.path.join(item_output_folder_path,Rotation_filename)
         
         # pitch only
-        raw_image = apply_pitch_transform(raw_image, pitch, K)
+        raw_image = apply_pitch_transform(raw_image, pitch,roll, K)
         cv2.imwrite(Rotation_filepath, raw_image)
 
         # yaw = 1
@@ -80,58 +80,58 @@ if __name__ == '__main__':
         # cv2.imwrite(Rotation_filepath, raw_image)
 
 
-        depth = depth_anything.infer_image(raw_image, args.input_size)
-        rows, columns = depth.shape
+        # depth = depth_anything.infer_image(raw_image, args.input_size)
+        # rows, columns = depth.shape
 
-        # 根据图像大小初始化window_size和step_size
-        window_size = find_max_x(rows,columns)
-        step_size = int(window_size/2)
-        print(f"window_size={window_size}   step_size={step_size}")
+        # # 根据图像大小初始化window_size和step_size
+        # window_size = find_max_x(rows,columns)
+        # step_size = int(window_size/2)
+        # print(f"window_size={window_size}   step_size={step_size}")
 
-        threeD_filename = f"threeD_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
-        threeD_filepath = os.path.join(item_output_folder_path,threeD_filename)
-        print(f"{file_raw_name}的三维深度图保存于{threeD_filepath}")
-        # input("按下任意键继续...")
-        threeD_picture(rows, columns, depth,threeD_filepath)
+        # threeD_filename = f"threeD_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        # threeD_filepath = os.path.join(item_output_folder_path,threeD_filename)
+        # print(f"{file_raw_name}的三维深度图保存于{threeD_filepath}")
+        # # input("按下任意键继续...")
+        # threeD_picture(rows, columns, depth,threeD_filepath)
 
-        Gif_filename = f"Gif_{os.path.splitext(os.path.basename(filename))[0]}" + '.gif'
-        Gif_filepath = os.path.join(item_output_folder_path,Gif_filename)
-        result_filename = f"Result_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
-        result_filepath = os.path.join(item_output_folder_path,result_filename)
-        print("现在开始计算depth的方差")
+        # Gif_filename = f"Gif_{os.path.splitext(os.path.basename(filename))[0]}" + '.gif'
+        # Gif_filepath = os.path.join(item_output_folder_path,Gif_filename)
+        # result_filename = f"Result_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        # result_filepath = os.path.join(item_output_folder_path,result_filename)
+        # print("现在开始计算depth的方差")
         
         
-        top_tenth_windows = variance_plane(depth,window_size,step_size,Gif_filepath)
+        # top_tenth_windows = variance_plane(depth,window_size,step_size,Gif_filepath)
         
-        print("原始的深度矩阵",depth)
+        # print("原始的深度矩阵",depth)
 
-        depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
-        # # depth = depth.astype(np.uint8)
+        # depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
+        # # # depth = depth.astype(np.uint8)
         
-        print("归一化之后的深度矩阵",depth)
-        depth = depth.astype(np.uint8)
+        # print("归一化之后的深度矩阵",depth)
+        # depth = depth.astype(np.uint8)
 
 
-        result_path = os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png')
-        if args.grayscale:
-            depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
-            depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2GRAY)
-        else:
-            depth = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(np.uint8)
-            depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2RGB)
+        # result_path = os.path.join(item_output_folder_path, os.path.splitext(os.path.basename(filename))[0] + '.png')
+        # if args.grayscale:
+        #     depth = np.repeat(depth[..., np.newaxis], 3, axis=-1)
+        #     depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2GRAY)
+        # else:
+        #     depth = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(np.uint8)
+        #     depth_image = cv2.cvtColor(depth, cv2.COLOR_BGR2RGB)
         
-        if args.pred_only:
-            for var, y, x in top_tenth_windows:
-                cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
-            cv2.imwrite(result_path, depth_image)
+        # if args.pred_only:
+        #     for var, y, x in top_tenth_windows:
+        #         cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+        #     cv2.imwrite(result_path, depth_image)
             
-        else:
-            for var, y, x in top_tenth_windows:
-                cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
-                cv2.rectangle(raw_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
-            split_region = np.ones((raw_image.shape[0], 50, 3), dtype=np.uint8) * 255
-            combined_result = cv2.hconcat([raw_image, split_region, depth_image])
+        # else:
+        #     for var, y, x in top_tenth_windows:
+        #         cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+        #         cv2.rectangle(raw_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+        #     split_region = np.ones((raw_image.shape[0], 50, 3), dtype=np.uint8) * 255
+        #     combined_result = cv2.hconcat([raw_image, split_region, depth_image])
             
-            cv2.imwrite(result_path, combined_result)
+        #     cv2.imwrite(result_path, combined_result)
             
-        print("结果已经保存到",result_path)
+        # print("结果已经保存到",result_path)

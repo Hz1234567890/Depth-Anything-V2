@@ -10,22 +10,38 @@ from Myglobal import *
 import cv2
 import numpy as np
 
-def compute_pitch_matrix(pitch_angle):
+def compute_pitch_matrix(pitch_angle, roll_angle):
     """
-    计算仰角旋转矩阵
+    计算仰角（pitch）和滚转（roll）旋转矩阵
     :param pitch_angle: 仰角（角度）
-    :return: 旋转矩阵 (3x3)
+    :param roll_angle: 滚转角（角度）
+    :return: 仰角和滚转角的旋转矩阵 (3x3)
     """
-    pitch_angle = 90 + pitch_angle
-    phi = np.deg2rad(pitch_angle)  # 角度转弧度
+    # 将角度转换为弧度
+    pitch_angle = -pitch_angle  # 仰角的定义方式
+    roll_angle = roll_angle  # 滚转角
+
+    # 计算仰角（pitch）的旋转矩阵
+    phi = np.deg2rad(pitch_angle)  # 仰角转弧度
     R_pitch = np.array([
         [1, 0, 0],
         [0, np.cos(phi), -np.sin(phi)],
         [0, np.sin(phi), np.cos(phi)]
     ])
-    return R_pitch
+    
+    # 计算滚转（roll）的旋转矩阵
+    theta = np.deg2rad(roll_angle)  # 滚转角转弧度
+    R_roll = np.array([
+        [np.cos(theta), -np.sin(theta), 0],
+        [np.sin(theta), np.cos(theta), 0],
+        [0, 0, 1]
+    ])
+    
+    # 返回仰角和滚转角的组合旋转矩阵（先仰角旋转，再滚转）
+    return np.dot(R_roll, R_pitch)
 
-def apply_pitch_transform(image, pitch_angle, K):
+
+def apply_pitch_transform(image, pitch_angle,roll_angle ,K):
     """
     对图像应用仰角透视变换并居中调整
     :param image: 输入图像
@@ -34,7 +50,7 @@ def apply_pitch_transform(image, pitch_angle, K):
     :return: 居中调整后的图像
     """
     h, w = image.shape[:2]
-    R_pitch = compute_pitch_matrix(pitch_angle)
+    R_pitch = compute_pitch_matrix(pitch_angle,roll_angle)
 
     # 计算透视变换矩阵 H
     K_inv = np.linalg.inv(K)
