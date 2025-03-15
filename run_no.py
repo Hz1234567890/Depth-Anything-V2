@@ -12,6 +12,7 @@ from depth_anything_v2.dpt import DepthAnythingV2
 from Variance import *
 from Myglobal import *
 from MyCanny import Canny
+from grow import grow
 from exif import *
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Depth Anything V2')
@@ -108,7 +109,11 @@ if __name__ == '__main__':
         
         
         top_tenth_windows = variance_plane(depth,window_size,step_size,Gif_filepath)
-        
+        print(top_tenth_windows)
+
+        grow_filename = f"Grow_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        grow_filepath = os.path.join(item_output_folder_path,grow_filename)
+        grow(rotation_image,depth,top_tenth_windows,window_size,grow_filepath)
         # print("原始的深度矩阵",depth)
 
         depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
@@ -133,9 +138,12 @@ if __name__ == '__main__':
             cv2.imwrite(result_path, depth_image)
             
         else:
-            for var, y, x in top_tenth_windows:
-                cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
-                cv2.rectangle(rotation_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+            var, y, x = top_tenth_windows
+            cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+            cv2.rectangle(rotation_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+            # for var, y, x in top_tenth_windows:
+            #     cv2.rectangle(depth_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
+            #     cv2.rectangle(rotation_image, (x, y), (x + window_size, y + window_size), (0, 255, 0), 2)
             # depth_image=inverse_pitch_transform(depth_image, pitch,roll, K)
             # rotation_image=inverse_pitch_transform(rotation_image, pitch,roll, K)
             split_region = np.ones((rotation_image.shape[0], 50, 3), dtype=np.uint8) * 255

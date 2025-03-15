@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 运行Python脚本
-python run_no.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/标定图片/angle1 --outdir /media/hz/新加卷/0mywork/mine/标定图片/angle1_out
+python run_no.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/标定图片/dji1 --outdir /media/hz/新加卷/0mywork/mine/标定图片/dji1_out
 
 
 # 检查是否成功运行

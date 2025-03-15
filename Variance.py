@@ -50,11 +50,11 @@ def apply_pitch_transform(image, pitch_angle,roll_angle ,K):
     :return: 居中调整后的图像
     """
     h, w = image.shape[:2]
-    R_pitch = compute_pitch_matrix(pitch_angle,roll_angle)
+    R = compute_pitch_matrix(pitch_angle,roll_angle)
 
     # 计算透视变换矩阵 H
     K_inv = np.linalg.inv(K)
-    H = K @ R_pitch @ K_inv
+    H = K @ R @ K_inv
 
     # 计算变换后的图像四个角点位置
     corners = np.array([[0, 0, 1], [w, 0, 1], [w, h, 1], [0, h, 1]])
@@ -85,31 +85,31 @@ def apply_pitch_transform(image, pitch_angle,roll_angle ,K):
 
     return transformed_image
 
-def inverse_pitch_transform(image, pitch_angle, roll_angle, K):
-    """
-    使用逆透视变换将经过 apply_pitch_transform 变换后的图像恢复。
-    :param image: 已经过透视变换后的图像
-    :param pitch_angle: 原先对图像应用的仰角（角度）
-    :param roll_angle: 原先对图像应用的滚转角（角度）
-    :param K: 相机内参矩阵
-    :return: 恢复后的图像
-    """
-    h, w = image.shape[:2]
+# def inverse_pitch_transform(image, pitch_angle, roll_angle, K):
+#     """
+#     使用逆透视变换将经过 apply_pitch_transform 变换后的图像恢复。
+#     :param image: 已经过透视变换后的图像
+#     :param pitch_angle: 原先对图像应用的仰角（角度）
+#     :param roll_angle: 原先对图像应用的滚转角（角度）
+#     :param K: 相机内参矩阵
+#     :return: 恢复后的图像
+#     """
+#     h, w = image.shape[:2]
     
-    # 1. 先获取原先对图像进行透视变换时的单应矩阵 H
-    #    也就是 apply_pitch_transform 里的 H = K @ R @ K_inv
-    R_pitch = compute_pitch_matrix(pitch_angle, roll_angle)
+#     # 1. 先获取原先对图像进行透视变换时的单应矩阵 H
+#     #    也就是 apply_pitch_transform 里的 H = K @ R @ K_inv
+#     R_pitch = compute_pitch_matrix(pitch_angle, roll_angle)
     
-    K_inv = np.linalg.inv(K)
-    H = K @ R_pitch @ K_inv
+#     K_inv = np.linalg.inv(K)
+#     H = K @ R_pitch @ K_inv
     
-    # 2. 计算逆矩阵 H_inv
-    H_inv = np.linalg.inv(H)
+#     # 2. 计算逆矩阵 H_inv
+#     H_inv = np.linalg.inv(H)
     
-    # 3. 使用 H_inv 对图像进行逆透视变换
-    restored_image = cv2.warpPerspective(image, H_inv, (w, h))
+#     # 3. 使用 H_inv 对图像进行逆透视变换
+#     restored_image = cv2.warpPerspective(image, H_inv, (w, h))
     
-    return restored_image
+#     return restored_image
 
 
 
