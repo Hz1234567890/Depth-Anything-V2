@@ -51,7 +51,8 @@ def get_gimbal_data(filename):
     return Y,P,R
 if __name__ == '__main__':
     # Read Image
-    files_path = "/media/hz/新加卷/0mywork/Depth-Anything-V2/标定图片/angle1"
+    files_path = "/media/hz/新加卷/0mywork/mine/标定图片/dji1"
+    # files_path="/media/hz/新加卷/0mywork/mine/test_1"
     files = os.listdir(files_path)
     filenames = [file for file in files if file.endswith('.JPG')]
     print(filenames)
@@ -64,6 +65,7 @@ if __name__ == '__main__':
         if 'Exif' in exif_dict:
             exif_data = exif_dict['Exif']
             exif_data_str = str(exif_data)
+            # print(exif_data_str)
             gimbal, flight = extract_gimbal_and_flight_data(exif_data_str)
             Y,P,R = gimbal
             Y=angular_correction(Y)

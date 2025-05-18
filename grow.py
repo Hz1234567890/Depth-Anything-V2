@@ -3,7 +3,7 @@ import cv2
 from collections import deque
 from outline import outline
 
-def dynamic_threshold(d, j, alpha=0.009, tau=3, lambda_=1, kappa=20, H=480, W=640):
+def dynamic_threshold(d, j, alpha=0.009, tau=3.5, lambda_=1, kappa=20, H=480, W=640):
     """
     计算动态阈值 T(d, j) ，用于控制平面生长范围
     """
@@ -26,7 +26,7 @@ def region_growing(white_mask, depth, step, max_iters, old_seeds):
     total = np.sum(white_mask)  # 种子像素总数
     seed_mean = np.sum(depth * white_mask) / total
 
-    # 将 old_seeds 和 seeds 中的点加入已处理集合，避免重复添加到队列
+    # 将 old_seeds 和 seeds 中的点加入已处理集，避免重复添加到队列
     processed = set(tuple(seed) for seed in old_seeds)
 
     # 初始化队列，只加入不在 processed 中的点
@@ -37,7 +37,7 @@ def region_growing(white_mask, depth, step, max_iters, old_seeds):
             queue.append(tuple(seed))
         processed.add(tuple(seed))
         count+=1
-        if(count%1000==0):
+        if(count%10000==0):
             print(f"{count}/{seeds.size}")
 
         
@@ -49,14 +49,14 @@ def region_growing(white_mask, depth, step, max_iters, old_seeds):
     while queue and iters < max_iters:
         i, j = queue.popleft()
         iters += 1
-        if iters % 1000 == 0:
+        if iters % 10000 == 0:
             print(f"ing:{iters}/{max_iters}")
 
         # 计算当前像素局部区域的平均深度
-        row_start = max(0, i - step)
-        row_end = min(H, i + step)
-        col_start = max(0, j - step)
-        col_end = min(W, j + step)
+        row_start = max(0, i - step//2)
+        row_end = min(H, i + step//2)
+        col_start = max(0, j - step//2)
+        col_end = min(W, j + step//2)
         d = np.nanmean(depth[row_start:row_end, col_start:col_end])
 
         # 计算动态阈值
@@ -101,22 +101,34 @@ def grow(rotation_image, depth_matrix, top_window, window_size, path):
     plane_mask = np.zeros((h, w), dtype=np.uint8)  # 结果掩码
     plane_mask[seed_y:seed_y + seed_h, seed_x:seed_x + seed_w] = 1  # 标记种子区域
 
-    step = max(1, int(window_size / 25))
+    step = max(1, int(window_size / 10))
 
     epcho = 0
-    max_iters = 10000
+    max_iters = 100000
     seeds = np.empty((0, 2), dtype=int)
-
-    while step > 0:
+    old_count=0
+    # while step > 1:
+    while step >= 1:
         epcho += 1
         print(f"开始{epcho}次生长:step={step};max_iters={max_iters}")
         plane_mask, seeds = region_growing(plane_mask, depth_matrix, step, max_iters, seeds)
         count_ones = np.sum(plane_mask)
         print(f"window_size={window_size}  count_ones={count_ones}")
         print("******************************************************")
-        
-        step = step // 2
-        max_iters = max_iters * 2
+        if count_ones==old_count:
+            break
+        old_count=count_ones
+        step = int(step // 2)
+        max_iters = int(max_iters * 4)
+
+    # nuclear = max(1, int(window_size / 80))
+    # 假设 plane_mask 是二值矩阵（0/1）
+    kernel_size = (100, 100)  # 根据凸起大小调整核尺寸
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, kernel_size)
+
+    # 开运算：先腐蚀后膨胀
+    plane_mask = cv2.morphologyEx(plane_mask, cv2.MORPH_OPEN, kernel)
+
 
     overlay = rotation_image.copy()
     white_mask = np.zeros_like(rotation_image, dtype=np.uint8)

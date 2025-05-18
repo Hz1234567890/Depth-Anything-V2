@@ -13,7 +13,10 @@ from Variance import *
 from Myglobal import *
 from MyCanny import Canny
 from grow import grow
-from exif import *
+from evaluate import *
+
+# from exif import *
+from rxif import get_gimbal_data
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Depth Anything V2')
     
@@ -21,7 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--input-size', type=int, default=518)
     parser.add_argument('--outdir', type=str, default='./mine_depth')
     
-    parser.add_argument('--encoder', type=str, default='vits', choices=['vits', 'vitb', 'vitl', 'vitg'])
+    parser.add_argument('--encoder', type=str, default='vitl', choices=['vits', 'vitb', 'vitl', 'vitg'])
     
     parser.add_argument('--pred-only', default=False, dest='pred_only', action='store_true', help='only display the prediction')
     parser.add_argument('--grayscale', dest='grayscale', action='store_true', help='do not apply colorful palette')
@@ -54,14 +57,29 @@ if __name__ == '__main__':
         print(f'Progress {k+1}/{len(filenames)}: {filename}')
         file_raw_name = filename
         file_only_name = os.path.splitext(os.path.basename(filename))[0]
+        json_only_name = file_only_name + ".json"
         print("文件名不含拓展名",file_only_name)
         filename = os.path.join(args.img_path,filename)
+        jsonname = os.path.join(args.img_path,json_only_name)
         item_output_folder_path = os.path.join(args.outdir,file_only_name)
         print(f"当前输出文件夹路径为{item_output_folder_path}")
         if not os.path.exists(item_output_folder_path):
             os.makedirs(item_output_folder_path, exist_ok=True)
         
-        yaw,pitch,roll = get_gimbal_data(filename)
+        true_mask_file = f"TMask{file_only_name}" + ".json"
+        
+        true_mask = read_json(jsonname,filename)
+        cv2.imwrite("mask.png", mask)
+        angles = get_gimbal_data(filename)
+        # "XMP:GimbalRollDegree",
+        # "XMP:GimbalYawDegree",
+        # "XMP:GimbalPitchDegree",
+        roll = float(angles[0])
+        yaw = float(angles[1])
+        pitch = float(angles[2])
+
+        
+        # yaw,pitch,roll = get_gimbal_data(filename)
 
         raw_image = cv2.imread(filename)
         h, w = raw_image.shape[:2]

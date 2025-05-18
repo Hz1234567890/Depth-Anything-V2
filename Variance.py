@@ -18,7 +18,8 @@ def compute_pitch_matrix(pitch_angle, roll_angle):
     :return: 仰角和滚转角的旋转矩阵 (3x3)
     """
     # 将角度转换为弧度
-    pitch_angle = 90 + pitch_angle  # 仰角的定义方式
+    # pitch_angle = 90+pitch_angle  # 仰角的定义方式
+    pitch_angle = 90+pitch_angle
     roll_angle = roll_angle  # 滚转角
 
     # 计算仰角（pitch）的旋转矩阵

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 运行Python脚本
-python run_no.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/标定图片/dji1 --outdir /media/hz/新加卷/0mywork/mine/标定图片/dji1_out
-
+# python run_no.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/test_2 --outdir /media/hz/新加卷/0mywork/mine/test_2_out
+python run_no.py --encoder vits --img-path /media/hz/新加卷/0mywork/mine/test3 --outdir /media/hz/新加卷/0mywork/mine/test3_out
 
 # 检查是否成功运行
 if [ $? -eq 0 ]; then
