@@ -6,6 +6,8 @@ import matplotlib.animation as animation
 from matplotlib.animation import PillowWriter
 import cv2
 from Myglobal import *
+from rxif import *
+import os
 
 import cv2
 import numpy as np
@@ -161,3 +163,28 @@ def variance_plane(depth_matrix,window_size,step_size,Gif_file_path):
     # plt.close()
 
     return top_quarter_windows
+
+if __name__ == "__main__":
+    img_path = "/media/hz/新加卷/0mywork/area_a"
+    os.makedirs(img_path, exist_ok=True)
+
+    for filename in [f for f in os.listdir(img_path) if f.endswith('.JPG')]:
+        filename = os.path.join(img_path,filename)
+        angles = get_gimbal_data(filename)
+        # "XMP:GimbalRollDegree",
+        # "XMP:GimbalYawDegree",
+        # "XMP:GimbalPitchDegree",
+        roll = float(angles[0])
+        yaw = float(angles[1])
+        pitch = float(angles[2])
+        raw_image = cv2.imread(filename)
+        h, w = raw_image.shape[:2]
+        original_size=(h,w)
+        print(f"original_size={original_size}")
+        # 对RGB影像进行云台透视矫正
+        Rotation_filename = f"Rotation_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
+        Rotation_filepath = os.path.join(img_path,Rotation_filename)
+        
+        # pitch only
+        rotation_image = apply_pitch_transform(raw_image, pitch,roll, K)
+        cv2.imwrite(Rotation_filepath, rotation_image)

@@ -16,8 +16,8 @@ K =  np.array([[2787.92123871456, 0, 1319.23947109118],
 # # 相机焦距f(m)
 # f = 0.026
 
-# 俯仰角
-pitch_angle = 24
+# # 俯仰角
+# pitch_angle = 24
 
 def find_max_x(depth, width):
     # 定义不等式的左边表达式
