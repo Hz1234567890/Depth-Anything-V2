@@ -69,7 +69,7 @@ if __name__ == '__main__':
         true_mask_file = f"TMask{file_only_name}" + ".json"
         
         true_mask = read_json(jsonname,filename)
-        cv2.imwrite("mask.png", mask)
+        # cv2.imwrite("mask.png", mask)
         angles = get_gimbal_data(filename)
         # "XMP:GimbalRollDegree",
         # "XMP:GimbalYawDegree",
@@ -109,8 +109,10 @@ if __name__ == '__main__':
         rows, columns = depth.shape
 
         # 根据图像大小初始化window_size和step_size
-        window_size = find_max_x(rows,columns)
-        step_size = int(window_size/2)
+        H = float(angles[6].split()[0])
+        window_size = find_window_size(H,pitch)
+        step_size = max(int(window_size/2),1)
+        print("window_size:",window_size)
         # print(f"window_size={window_size}   step_size={step_size}")
 
         # threeD_filename = f"threeD_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
@@ -131,8 +133,15 @@ if __name__ == '__main__':
 
         grow_filename = f"Grow_{os.path.splitext(os.path.basename(filename))[0]}" + '.png'
         grow_filepath = os.path.join(item_output_folder_path,grow_filename)
-        grow(rotation_image,depth,top_tenth_windows,window_size,grow_filepath)
+        result_mask = grow(rotation_image,depth,top_tenth_windows,window_size,grow_filepath)
         # print("原始的深度矩阵",depth)
+
+        #这里我们对方法的实际效果进行检验
+        #1、精确性：与划定safe区域的交并比
+        #2、正确性：不能unsafe区域
+        #3、
+        
+
 
         depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
         depth = depth.astype(np.uint8)

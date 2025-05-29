@@ -139,11 +139,12 @@ def process_mask(plane_mask, kernel_size):
     # 找到面积最大的区域（跳过背景0）
     max_label = np.argmax(stats[1:, cv2.CC_STAT_AREA]) + 1
     max_mask = (labels == max_label).astype(np.uint8) * 255
+
+    final_mask = cv2.morphologyEx(max_mask, cv2.MORPH_OPEN, kernel)
     
     
     
-    
-    return max_mask
+    return final_mask
 
 def grow(rotation_image, depth_matrix, top_window, window_size, path):
     """
@@ -188,7 +189,7 @@ def grow(rotation_image, depth_matrix, top_window, window_size, path):
 
     # # 开运算：先腐蚀后膨胀
     # plane_mask = cv2.morphologyEx(plane_mask, cv2.MORPH_OPEN, kernel)
-    kernel_size = (50, 50)
+    kernel_size = (window_size//2, window_size//2)
     plane_mask = process_mask (plane_mask,kernel_size)
 
 
@@ -198,7 +199,7 @@ def grow(rotation_image, depth_matrix, top_window, window_size, path):
 
     alpha = 0.5  # 透明度参数
     blended = cv2.addWeighted(overlay, 1 - alpha, white_mask, alpha, 0)
-
+    
     cv2.rectangle(blended, 
                   (seed_x, seed_y),
                   (seed_x + window_size, seed_y + window_size), 
@@ -211,3 +212,5 @@ def grow(rotation_image, depth_matrix, top_window, window_size, path):
                   (255, 255, 255), border_thickness)
 
     cv2.imwrite(path, blended)
+
+    return plane_mask
