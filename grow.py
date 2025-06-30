@@ -162,10 +162,12 @@ def grow(rotation_image, depth_matrix, top_window, window_size, path):
     plane_mask[seed_y:seed_y + seed_h, seed_x:seed_x + seed_w] = 1  # 标记种子区域
 
     step = max(1, int(window_size / 5))
+    # step = max(1, int(window_size / 80))
+
 
     epcho = 0
-    max_iters = 8000
-    max_epcho = 10
+    max_iters = 12000
+    max_epcho = 8
     seeds = np.empty((0, 2), dtype=int)
     old_count=0
     # while step > 1:
@@ -195,21 +197,21 @@ def grow(rotation_image, depth_matrix, top_window, window_size, path):
 
     overlay = rotation_image.copy()
     white_mask = np.zeros_like(rotation_image, dtype=np.uint8)
-    white_mask[plane_mask > 0] = [255, 255, 255]
+    white_mask[plane_mask > 0] = [0, 255, 0]
 
-    alpha = 0.5  # 透明度参数
-    blended = cv2.addWeighted(overlay, 1 - alpha, white_mask, alpha, 0)
+    alpha = 0.4  # 透明度参数
+    blended = cv2.addWeighted(overlay, 0.8, white_mask, alpha, 0)
     
-    cv2.rectangle(blended, 
-                  (seed_x, seed_y),
-                  (seed_x + window_size, seed_y + window_size), 
-                  (0, 0, 255), 2)  # 红色边框
+    # cv2.rectangle(blended, 
+    #               (seed_x, seed_y),
+    #               (seed_x + window_size, seed_y + window_size), 
+    #               (0, 0, 255), 2)  # 红色边框
 
-    border_thickness = 3
-    cv2.rectangle(blended, 
-                  (border_thickness, border_thickness), 
-                  (w - border_thickness, h - border_thickness), 
-                  (255, 255, 255), border_thickness)
+    # border_thickness = 3
+    # cv2.rectangle(blended, 
+    #               (border_thickness, border_thickness), 
+    #               (w - border_thickness, h - border_thickness), 
+    #               (255, 255, 255), border_thickness)
 
     cv2.imwrite(path, blended)
 

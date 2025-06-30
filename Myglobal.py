@@ -31,7 +31,7 @@ def find_max_x(depth, width):
             # 当不等式不成立时，返回上一个有效的 x 值
             return int(x - 1)
         x += 1
-def find_window_size(H, theta_deg, target_width=200, target_height=200):
+def find_window_size(H, theta_deg, target_width=100, target_height=100):
     """
     预测指定区域对应的像素数
     

@@ -55,7 +55,7 @@ def pixel_accuracy(mask_pred, mask_true, epsilon=1e-6):
     return correct_pixels / (total_pixels + epsilon)
 
 
-json_file="/media/hz/新加卷/0mywork/mine/test3/DJI_20250401164312_0027_V.json"
-jpg_file="/media/hz/新加卷/0mywork/mine/test3/DJI_20250401164312_0027_V.JPG"
-mask=read_json(json_file,jpg_file)
-cv2.imwrite("mask.png", mask)
+# json_file="/media/hz/新加卷/0mywork/mine/test3/DJI_20250401164312_0027_V.json"
+# jpg_file="/media/hz/新加卷/0mywork/mine/test3/DJI_20250401164312_0027_V.JPG"
+# mask=read_json(json_file,jpg_file)
+# cv2.imwrite("mask.png", mask)

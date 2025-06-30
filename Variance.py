@@ -165,7 +165,7 @@ def variance_plane(depth_matrix,window_size,step_size,Gif_file_path):
     return top_quarter_windows
 
 if __name__ == "__main__":
-    img_path = "/media/hz/新加卷/0mywork/area_a"
+    img_path = "/media/hz/新加卷/0mywork/database/area-new-0604/area-new-1"
     os.makedirs(img_path, exist_ok=True)
 
     for filename in [f for f in os.listdir(img_path) if f.endswith('.JPG')]:
